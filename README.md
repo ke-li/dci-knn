@@ -1,4 +1,4 @@
-# Fast k-Nearest Neighbour Search using Dynamic Continuous Indexing (DCI)
+# Fast _k_-Nearest Neighbour Search using Dynamic Continuous Indexing (DCI)
 
 ### [Project](https://people.eecs.berkeley.edu/~ke.li/projects/dci/) | [Slides](https://people.eecs.berkeley.edu/~ke.li/papers/dci_slides.pdf) | [Poster](https://people.eecs.berkeley.edu/~ke.li/papers/pdci_icml17_poster.pdf) | [Talk Video](https://vimeo.com/238229447) | [Paper](https://arxiv.org/abs/1703.00440)
 
@@ -22,6 +22,8 @@ This repository contains the reference implementation of Prioritized DCI, which 
 
 The library can be compiled in one of two ways: using Python distutils or the good old Makefile. The former requires less manual configuration, but *cannot* be used if your code uses the C interface or the TensorFlow op. 
 
+**Note:** If your Python interpreter is named differently, e.g.: "python3", you will need to replace all occurrences of "python" with "python3" in the commands below.
+
 ## Option 1: Python distutils
 
 In the root directory of the code base, go into the "python" subdirectory:
@@ -30,7 +32,6 @@ cd python
 ```
 
 If you have sudo access, run the following command to compile and install as a Python package:
-(If your Python interpreter is named differently, e.g.: "python3", you will need to replace all occurrences of "python" with "python3" in the commands below.)
 ```bash
 python setup.py install
 ```
@@ -95,8 +96,8 @@ See the source code for example usage. The source code of the binary executable 
 
 Please cite the following paper if you found this library useful in your research:
 
-### Fast _k_-Nearest Neighbour Search via Dynamic Continuous Indexing
-[Ke Li](https://people.eecs.berkeley.edu/~ke.li/), [Jitendra Malik](https://people.eecs.berkeley.edu/~malik/)
+### [Fast _k_-Nearest Neighbour Search via Dynamic Continuous Indexing](https://arxiv.org/abs/1512.00442)
+[Ke Li](https://people.eecs.berkeley.edu/~ke.li/), [Jitendra Malik](https://people.eecs.berkeley.edu/~malik/)\
 *International Conference on Machine Learning (ICML)*, 2016
 
 ```
