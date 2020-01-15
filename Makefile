@@ -139,7 +139,6 @@ TENSORFLOW_INCL_DIR=/usr/local/lib/python3.5/dist-packages/tensorflow/include
 
 SRC_DIR=src
 INCL_DIR=include
-PY_SRC_DIR=python
 PY_PKG_NAME=dciknn
 BUILD_DIR=build
 C_BUILD_DIR=$(BUILD_DIR)/c
@@ -198,7 +197,7 @@ all: c tf py
 .PHONY: c
 
 c: $(C_BUILD_DIR)/example
-	ln -sf $(C_BUILD_DIR)/example .
+	ln -sf ../$(C_BUILD_DIR)/example examples/
 
 $(C_BUILD_DIR)/example: $(C_BUILD_DIR)/example.o $(C_OBJ_PATHS)
 	$(CC) -o $@ $^ $(GEN_FLAGS) $(LIB_FLAGS)
@@ -222,7 +221,6 @@ $(TF_BUILD_DIR)/%.o: $(SRC_DIR)/%.c $(TF_INCL_PATHS)
 .PHONY: py
 
 py: $(PY_BUILD_DIR)/_dci.so
-	cp -r $(PY_SRC_DIR)/$(PY_PKG_NAME) .
 	ln -sf ../$(PY_BUILD_DIR)/_dci.so $(PY_PKG_NAME)/
 
 $(PY_BUILD_DIR)/%.so: $(PY_BUILD_DIR)/py%.o $(PY_OBJ_PATHS)
@@ -240,7 +238,7 @@ clean: clean-c clean-tf clean-py
 .PHONY: clean-c
 
 clean-c:
-	rm -rf $(C_BUILD_DIR) example
+	rm -rf $(C_BUILD_DIR) examples/example
 
 .PHONY: clean-tf
 
@@ -250,5 +248,5 @@ clean-tf:
 .PHONY: clean-py
 
 clean-py:
-	rm -rf $(PY_BUILD_DIR) $(PY_PKG_NAME)
+	rm -rf $(PY_BUILD_DIR) $(PY_PKG_NAME)/_dci.so $(PY_PKG_NAME)/*.pyc $(PY_PKG_NAME)/__pycache__
 

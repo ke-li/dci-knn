@@ -23,10 +23,10 @@ from numpy.distutils.core import setup
 def build_ext(config, dist):
     
     lapack_info = get_info('lapack_opt', 1)
-    dci_sources = ['../src/dci.c', '../src/py_dci.c', '../src/util.c']
-    dci_headers = ['../include/dci.h', '../include/util.h']
+    dci_sources = ['src/dci.c', 'src/py_dci.c', 'src/util.c']
+    dci_headers = ['include/dci.h', 'include/util.h']
     if lapack_info:
-        config.add_extension(name='_dci',sources=dci_sources, depends=dci_headers, include_dirs=['../include'], extra_info=lapack_info, extra_compile_args=['-fopenmp'], extra_link_args=['-lgomp'])
+        config.add_extension(name='_dci',sources=dci_sources, depends=dci_headers, include_dirs=['include'], extra_info=lapack_info, extra_compile_args=['-fopenmp'], extra_link_args=['-lgomp'])
 
     if not lapack_info:
         raise ImportError("No BLAS library found.")

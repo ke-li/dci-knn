@@ -16,63 +16,17 @@ Copyright (C) 2017    Ke Li
 '''
 
 import numpy as np
-import tensorflow as tf
 import os
 import sys
 
+try:
+    from dciknn import DCI
+except ImportError:
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..')))
+    from dciknn import DCI
+
 from time import time
 
-def construct_graph(dim, num_comp_indices = 2, num_simp_indices = 7, num_levels = 2, construction_prop_to_visit = 1.0, construction_prop_to_retrieve = 0.002, construction_field_of_view = 10, query_prop_to_visit = 1.0, query_prop_to_retrieve = 0.8, query_field_of_view = 100):
-    dci_module = tf.load_op_library('./_dci_tf.so')
-    graph = tf.Graph()
-    with graph.as_default():
-        query = tf.placeholder(tf.float64, shape = [None, None], name = "query")
-        data = tf.placeholder(tf.float64, shape = [None, None], name = "data")
-        num_neighbours = tf.placeholder(tf.int32, shape = [], name = "num_neighbours")
-        update_db = tf.placeholder(tf.bool, shape = [], name = "update_db")
-        
-        # DCI TensorFlow Op
-        # 
-        # The op takes in the following attributes, whose values should be specified at graph construction time:
-        # 
-        # dim:                              Dimensionality of the vectors. 
-        # num_comp_indices:                 Number of composite indices (a small integer like 2 or 3 is recommended). 
-        # num_simp_indices:                 Number of simple indices per composite index (a larger integer like 7 or 10 is recommended). 
-        # num_levels:                       Number of levels (a small integer like 2 or 3 is recommended). 
-        # 
-        # The op takes in the following input tensors, whose values may remain unknown until runtime:
-        # 
-        # data:                             A float64 matrix of shape (num of data points) x dim containing the database of points to search over. 
-        # query:                            A float32 matrix of shape (num of queries) x dim containing the queries to the database. 
-        # num_neighbours:                   An int32 scalar containing the number of nearest neighbours to return. 
-        # update_db:                        A boolean scalar specifying whether or not to update the database. If true, will update the database 
-        #                                   with the current value of data tensor; if false, will re-use the stale database from before. Must be 
-        #                                   set to true the first time this op is run. 
-        # construction_prop_to_visit:       A float64 scalar containing the maximum proportion of points to visit when constructing the data 
-        #                                   structure. Has no effect when num_levels = 1. A large number like 1.0 is recommended. 
-        # construction_prop_to_retrieve:    A float64 scalar containing the maximum proportion of points to retrieve when constructing the data 
-        #                                   structure. Has no effect when num_levels = 1. A small number like 0.002 is recommended. 
-        # construction_field_of_view:       An int32 scalar containing the maximum number of probes into the next level when constructing the 
-        #                                   data structure. Has no effect when num_levels = 1. A moderately large number like 10 is recommended. 
-        # query_prop_to_visit:              A float64 scalar containing the maximum proportion of points to visit when querying. A large number 
-        #                                   like 1.0 is recommended.
-        # query_prop_to_retrieve:           A float64 scalar containing the maximum proportion of points to retrieve when constructing the data 
-        #                                   structure. A moderately large number like 0.8 is recommended. 
-        # query_field_of_view:              An int32 scalar containing the maximum number of probes into the next level when querying. Has no 
-        #                                   effect when num_levels = 1. A large number like 100 is recommended. 
-        # 
-        # The op returns the following output tensors:
-        # 
-        # nearest_neighbour_ids:            A int32 matrix of shape (num of queries) x (num of neighbours) containing the indices of the nearest 
-        #                                   neighbours to each query. 
-        # nearest_neighbour_dists:          A float64 matrix of shape (num of queries) x (num of neighbours) containing the Euclidean distances 
-        #                                   between the nearest neighbours and the queries. 
-        
-        nearest_neighbour_ids, nearest_neighbour_dists = dci_module.dci_knn(data, query, num_neighbours, update_db, dim = dim, num_comp_indices = num_comp_indices, num_simp_indices = num_simp_indices, num_levels = num_levels, construction_prop_to_visit = construction_prop_to_visit, construction_prop_to_retrieve = construction_prop_to_retrieve, construction_field_of_view = construction_field_of_view, query_prop_to_visit = query_prop_to_visit, query_prop_to_retrieve = query_prop_to_retrieve, query_field_of_view = query_field_of_view)
-    placeholders = {"query": query, "data": data, "num_neighbours": num_neighbours, "update_db": update_db}
-    outputs = {"nearest_neighbour_ids": nearest_neighbour_ids, "nearest_neighbour_dists": nearest_neighbour_dists}
-    return graph, placeholders, outputs
-    
 def gen_data(ambient_dim, intrinsic_dim, num_points):
     latent_data = 2 * np.random.rand(num_points, intrinsic_dim) - 1     # Uniformly distributed on [-1,1)
     transformation = 2 * np.random.rand(intrinsic_dim, ambient_dim) - 1
@@ -141,30 +95,82 @@ def main(*args):
     query_field_of_view = 100
     query_prop_to_retrieve = 0.8
     
-    
     print("Generating Data... ")
     t0 = time()
-    data_and_queries = gen_data(dim, intrinsic_dim, num_points + num_queries)
-    data = np.copy(data_and_queries[:num_points,:])
-    queries = data_and_queries[num_points:,:]
+    data_and_query = gen_data(dim, intrinsic_dim, num_points + num_queries)
+    data = np.copy(data_and_query[:num_points,:])
+    query = data_and_query[num_points:,:]
+    
     print("Took %.4fs" % (time() - t0))
     
-    print("Constructing Graph... ")
+    print("Constructing Data Structure... ")
     t0 = time()
-    graph, placeholders, outputs = construct_graph(dim, num_comp_indices, num_simp_indices, num_levels = num_levels, construction_prop_to_retrieve = construction_prop_to_retrieve, construction_field_of_view = construction_field_of_view, query_prop_to_retrieve = query_prop_to_retrieve, query_field_of_view = query_field_of_view)
+    
+    # DCI()
+    # 
+    # Constructs a new DCI database. 
+    # 
+    # The constructor takes in the following parameters:
+    #
+    # dim:                              Dimensionality of the vectors. 
+    # num_comp_indices:                 Number of composite indices (a small integer like 2 or 3 is recommended). 
+    # num_simp_indices:                 Number of simple indices per composite index (a larger integer like 7 or 10 is recommended). 
+    dci_db = DCI(dim, num_comp_indices, num_simp_indices)
+    
+    
+    # DCI.add()
+    # 
+    # Add data to DCI database. 
+    # 
+    # The method takes in the following parameters:
+    # 
+    # data:                             A float64 matrix of shape (num of data points) x dim containing the database of points to search over. 
+    # num_levels:                       Number of levels (a small integer like 2 or 3 is recommended). 
+    # field_of_view:                    Maximum number of probes into the next level when constructing the data structure. Has no effect when 
+    #                                   num_levels = 1. A moderately large number like 10 is recommended. 
+    # prop_to_visit:                    Maximum proportion of points to visit when constructing the data structure. Has no effect when 
+    #                                   num_levels = 1. A large number like 1.0 is recommended. 
+    # prop_to_retrieve:                 Maximum proportion of points to retrieve when constructing the data structure. Has no effect when 
+    #                                   num_levels = 1. A small number like 0.002 is recommended. 
+    # blind:                            Whether to look at the data and compute true distances between the data points at each level and the 
+    #                                   retrieved data points at the next level. When set to true, the association between data points in
+    #                                   adjacent levels will be less accurate. To compensate for this, num_simp_indices should be increased. 
+    #                                   Has no effect when num_levels = 1. It is recommended to set this to false. 
+    dci_db.add(data, num_levels = num_levels, field_of_view = construction_field_of_view, prop_to_retrieve = construction_prop_to_retrieve)
+    
     print("Took %.4fs" % (time() - t0))
-
-    print("Starting Tensorflow Session... ")
+    
+    print("Querying... ")
     t0 = time()
-    with tf.Session(graph=graph) as sess:
-        print("Took %.4fs" % (time() - t0))
-        print("Constructing Data Structure and Querying Using Tensorflow... ")
-        t0 = time()
-        nearest_neighbour_ids, nearest_neighbour_dists = sess.run([outputs["nearest_neighbour_ids"], outputs["nearest_neighbour_dists"]], feed_dict={placeholders["data"]: data, placeholders["query"]: queries, placeholders["num_neighbours"]: num_neighbours, placeholders["update_db"]: True})
-        print("Took %.4fs" % (time() - t0))
-        
-    print(nearest_neighbour_ids)
-    #print(nearest_neighbour_dists)
+    
+    # DCI.query()
+    # 
+    # Query the DCI database. 
+    # 
+    # The method takes in the following parameters:
+    # 
+    # query:                            A float32 matrix of shape (num of queries) x dim containing the queries to the database. 
+    # num_neighbours:                   The number of nearest neighbours to return. 
+    # field_of_view:                    Maximum number of probes into the next level when querying. Has no effect when num_levels = 1. 
+    #                                   A large number like 100 is recommended. 
+    # prop_to_visit:                    Maximum proportion of points to visit when querying. A large number like 1.0 is recommended.
+    # prop_to_retrieve:                 Maximum proportion of points to retrieve when constructing the data structure. A moderately large 
+    #                                   number like 0.8 is recommended. 
+    # blind:                            Whether to look at the data and compute true distances between the query and the retrieved points. 
+    #                                   When set to true, nearest_neighbour_dists will contain the maximum projected distances rather than
+    #                                   true distances and the returned points will be less accurate. To compensate for this, 
+    #                                   num_simp_indices should be increased. It is recommended to set this to false. 
+    # 
+    # The method returns the following:
+    # 
+    # nearest_neighbour_ids:            A list of int32 arrays containing the indices of the nearest neighbours to each query. 
+    # nearest_neighbour_dists:          A list of float64 arrays containing the Euclidean distances between the nearest neighbours and the 
+    #                                   queries. 
+    nearest_neighbour_idx, nearest_neighbour_dists = dci_db.query(query, num_neighbours = num_neighbours, field_of_view = query_field_of_view, prop_to_retrieve = query_prop_to_retrieve)
+    
+    print("Took %.4fs" % (time() - t0))
+    print(nearest_neighbour_idx)
+    print(nearest_neighbour_dists)
     
 if __name__ == '__main__':
     main(*sys.argv[1:])

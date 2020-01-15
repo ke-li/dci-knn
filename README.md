@@ -26,14 +26,9 @@ The library can be compiled in one of two ways: using Python distutils or the go
 
 ## Option 1: Python distutils
 
-In the root directory of the code base, go into the "python" subdirectory:
+If you have sudo access, run the following command from the root directory of the code base to compile and install as a Python package:
 ```bash
-cd python
-```
-
-If you have sudo access, run the following command to compile and install as a Python package:
-```bash
-python setup.py install
+sudo python setup.py install
 ```
 
 If you do not have sudo access, run the following command instead:
@@ -75,24 +70,24 @@ In the root directory of the code base, execute the following commands, dependin
 ### Python Interface
 
 ```bash
-python example.py
+python examples/example.py
 ```
 
 ### TensorFlow Op
 
 ```bash
-python example_tf.py
+python examples/example_tf.py
 ```
 
 ### C Interface
 
 ```bash
-./example
+examples/example
 ```
 
 See the source code for example usage. The source code of the binary executable that uses the C interface is in "src/example.c".
 
-## Reference
+# Reference
 
 Please cite the following paper if you found this library useful in your research:
 
