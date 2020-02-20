@@ -560,8 +560,8 @@ static int dci_query_single_point(const dci* const dci_inst, int num_populated_l
     if (query_config.blind) {
         max_num_points_to_expand += dci_inst->num_comp_indices-1;
     }
-    idx_elem points_to_expand[max_num_points_to_expand*max_num_points_to_expand];
-    idx_elem points_to_expand_next[max_num_points_to_expand*max_num_points_to_expand];
+    idx_elem* points_to_expand = (idx_elem *)malloc(sizeof(idx_elem) * max_num_points_to_expand*max_num_points_to_expand);
+    idx_elem* points_to_expand_next = (idx_elem *)malloc(sizeof(idx_elem) * max_num_points_to_expand*max_num_points_to_expand);
     
     int top_level_counts[dci_inst->num_comp_indices*dci_inst->num_coarse_points];
     double top_level_candidate_dists[dci_inst->num_coarse_points];
@@ -749,6 +749,9 @@ static int dci_query_single_point(const dci* const dci_inst, int num_populated_l
     for (k = 0; k < num_points_to_expand; k++) {
         top_candidates[k] = points_to_expand_next[k];
     }
+
+    free(points_to_expand);
+    free(points_to_expand_next);
     
     return num_points_to_expand;
     
@@ -795,8 +798,8 @@ void dci_query(dci* const dci_inst, const int dim, const int num_queries, const 
         int k;
         int cur_num_returned;
         
-        idx_elem top_candidates[num_neighbours];        // Maintains the top-k candidates
-        
+        idx_elem* top_candidates = (idx_elem *)malloc(sizeof(idx_elem) * num_neighbours);	// Maintains the top-k candidates
+
         cur_num_returned = dci_query_single_point(dci_inst, dci_inst->num_levels, num_neighbours, &(query[j*dim]), &(query_proj[j*num_indices]), query_config, top_candidates);
         
         assert(cur_num_returned <= num_neighbours);
@@ -813,6 +816,7 @@ void dci_query(dci* const dci_inst, const int dim, const int num_queries, const 
         if (num_returned) {
             num_returned[j] = cur_num_returned;
         }
+	free(top_candidates);
     }
     free(query_proj);
     
